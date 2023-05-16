@@ -93,7 +93,7 @@ def change_encoding(data, data_module, expected_module):
         return change_encoding(temp_data, 1, 2)
 
 
-def draw_graph(data, module, groups=None):
+def draw_graph(data, module, groups=None, labels=False):
     if module == 1:
         pass
     elif module == 2:
@@ -102,6 +102,9 @@ def draw_graph(data, module, groups=None):
         data = change_encoding(data, 3, 1)
 
     graph = nx.from_numpy_array(data)
+
+    for u, v, d in graph.edges(data=True):
+        d['weight'] = random.randint(1, 10)
 
     group_colors = ['r', "b", "g", "y", "k"]
     color_dict = {}
@@ -114,6 +117,11 @@ def draw_graph(data, module, groups=None):
         nx.draw_circular(graph, with_labels=True, node_color=[color_dict[node] for node in graph.nodes()])
     else:
         nx.draw_circular(graph, with_labels=True)
+
+    if labels:
+        edge_labels = nx.get_edge_attributes(graph, 'weight')
+        nx.draw_networkx_edge_labels(graph, pos=nx.circular_layout(graph), edge_labels=edge_labels)
+
     plt.axis('equal')
     plt.show()
 

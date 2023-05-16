@@ -33,29 +33,29 @@ def construct_graph(seq):
 # zadanie 2 do naprawienia
 
 
-# def random_edge_swap(graph):
-#     n = graph.shape[0]
-#     # losowo wybieramy 2 pary krawędzi
-#     a, b, c, d = random.sample(range(n), 4)
-#     while b == a or c == d or graph[a, b] == 0 or graph[c, d] == 0 or graph[a, d] == 1 or graph[b, c] == 1:
-#         a, b, c, d = random.sample(range(n), 4)
-#     # zamieniamy krawędzie
-#     graph[a, b] = 0
-#     graph[b, a] = 0
-#     graph[c, d] = 0
-#     graph[d, c] = 0
-#     graph[a, d] = 1
-#     graph[d, a] = 1
-#     graph[b, c] = 1
-#     graph[c, b] = 1
-#     return graph
+def random_edge_swap(graph):
+    n = graph.shape[0]
+    # losowo wybieramy 2 pary krawędzi
+    a, b, c, d = random.sample(range(n), 4)
+    while b == a or c == d or graph[a, b] == 0 or graph[c, d] == 0 or graph[a, d] == 1 or graph[b, c] == 1:
+        a, b, c, d = random.sample(range(n), 4)
+    # zamieniamy krawędzie
+    graph[a, b] = 0
+    graph[b, a] = 0
+    graph[c, d] = 0
+    graph[d, c] = 0
+    graph[a, d] = 1
+    graph[d, a] = 1
+    graph[b, c] = 1
+    graph[c, b] = 1
+    return graph
 
 
 # # funkcja randomizująca graf
-# def randomize_graph(graph, num_iterations):
-#     for i in range(num_iterations):
-#         graph = random_edge_swap(graph)
-#     return graph
+def randomize_graph(graph, num_iterations):
+    for i in range(num_iterations):
+        graph = random_edge_swap(graph)
+    return graph
 
 
 def randomize_edges(neighbourList, number, verbose=False):
@@ -102,30 +102,6 @@ def randomize_edges(neighbourList, number, verbose=False):
     return edges
 
 
-
-# zadanie 3
-# def dfs(graph, visited, v, component):
-#     visited[v] = True
-#     component.append(v)
-#     for i in range(len(graph)):
-#         if graph[v][i] == 1 and not visited[i]:
-#             dfs(graph, visited, i, component)
-#
-#
-#
-# def largest_connected_component(graph):
-#     n = len(graph)
-#     visited = [False] * n
-#     largest_component = []
-#     for i in range(n):
-#         if not visited[i]:
-#             component = []
-#             dfs(graph, visited, i, component)
-#             if len(component) > len(largest_component):
-#                 largest_component = component
-#     return largest_component
-
-
 def dfs(graph, visited, v, component):
     visited[v] = True
     component.append(v)
@@ -160,142 +136,121 @@ def all_connected_components(graph):
 
 
 # zad 4
-def generate_graph_NL(n, l):
-    if l < 0 or l > n * (n - 1) / 2:
-        raise ValueError("Wrong randomization arguments")
+def generate_eulerian_graph(num_vertices):
+    adjacency_matrix = [[0] * num_vertices for _ in range(num_vertices)]
 
-    edges = []
+    even_vertices = list(range(0, num_vertices, 2))
 
-    for i in range(l):
-        while True:
-            rand1 = np.random.randint(1, n + 1)
-            rand2 = rand1
+    odd_vertices = list(range(1, num_vertices, 2))
 
-            while rand1 == rand2:
-                rand2 = np.random.randint(1, n + 1)
+    random.shuffle(odd_vertices)
 
-            edge = [rand1, rand2]
-            edge.sort()
+    for i in range(len(even_vertices)):
+        for j in range(i + 1, len(even_vertices)):
+            adjacency_matrix[even_vertices[i]][even_vertices[j]] = 1
+            adjacency_matrix[even_vertices[j]][even_vertices[i]] = 1
 
-            if edge not in edges:
-                edges.append(edge)
+    for i in range(len(odd_vertices)):
+        for j in range(i + 1, len(odd_vertices)):
+            adjacency_matrix[odd_vertices[i]][odd_vertices[j]] = 1
+            adjacency_matrix[odd_vertices[j]][odd_vertices[i]] = 1
+
+    for i in range(len(even_vertices)):
+        j = random.randrange(len(odd_vertices))
+        adjacency_matrix[even_vertices[i]][odd_vertices[j]] = 1
+        adjacency_matrix[odd_vertices[j]][even_vertices[i]] = 1
+
+    return np.array(adjacency_matrix)
+
+
+def find_eulerian_cycle(adjacency_matrix):
+    """
+    Finds an Eulerian cycle in the given graph represented by its adjacency matrix.
+    Returns a list of vertices in the cycle.
+    """
+    # Find the starting vertex for the cycle
+    start_vertex = 0
+    while sum(adjacency_matrix[start_vertex]) == 0:
+        start_vertex += 1
+
+    # Initialize the cycle with the starting vertex
+    cycle = [start_vertex]
+
+    # Repeat until all edges have been visited
+    while True:
+        # Find an unused edge from the current vertex
+        for next_vertex in range(len(adjacency_matrix)):
+            if adjacency_matrix[cycle[-1]][next_vertex] == 1:
                 break
 
-    maxList = map(max, edges)
+        # If all edges have been visited, we're done
+        else:
+            break
 
-    nodeNumber = max(maxList)
-    neighbourList = []
+        # Follow the edge to the next vertex
+        cycle.append(next_vertex)
+        adjacency_matrix[cycle[-2]][next_vertex] = 0
+        adjacency_matrix[next_vertex][cycle[-2]] = 0
 
-    for _ in range(nodeNumber):
-        neighbourList.append([])
-
-    for edge in edges:
-        neighbourList[edge[0] - 1].append(edge[1])
-        neighbourList[edge[1] - 1].append(edge[0])
-
-    return neighbourList
-
-def calculateIntegrityArrayV3(sequence, neighbourList):
-    while [] in neighbourList:
-        emptyArrayIndex = neighbourList.index([])
-        neighbourList.pop(emptyArrayIndex)
-        for i in range(len(neighbourList)):
-            for j in range(len(neighbourList[i])):
-                if neighbourList[i][j] > emptyArrayIndex + 1:
-                    neighbourList[i][j] = neighbourList[i][j] - 1
-        sequence = [len(neighbourList[i]) for i in range(len(neighbourList))]
-
-    numberOfNodes = len(sequence)
-    comp = []
-    integrityNumber = 0
-
-    for i in range(numberOfNodes):
-        comp.append(-1)
-
-    def componentsV3(integrityNumber, index, neighbourList, comp):
-        neighbours = neighbourList[index]
-
-        for i in neighbours:
-            if comp[i - 1] == -1:
-                comp[i - 1] = integrityNumber
-                componentsV3(integrityNumber, i - 1, neighbourList, comp)
-
-    for i in range(numberOfNodes):
-        if comp[i] == -1:
-            integrityNumber += 1
-            comp[i] = integrityNumber
-            componentsV3(integrityNumber, i, neighbourList, comp)
-
-    return comp
-
-
-def generateEulerGraph(n, l):
-    while True:
-        neighbourList = generate_graph_NL(n, l)
-        sequence = [len(neighbourList[i]) for i in range(len(neighbourList))]
-
-        if max(calculateIntegrityArrayV3(sequence, neighbourList)) == 1 and all(
-            sequence[i] % 2 == 0 for i in range(len(sequence))
-        ):
-            return neighbourList
-
+    return cycle
 
 # zad 5
-def generateRegularGraphNP(nodes, level, probability=None):
-    if level >= nodes or (level % 2 == 1 and not nodes % 2 == 0):
-        raise ValueError("Wrong randomization arguments")
 
-    if probability is None:
-        probability = level / nodes
+def generate_k_regular_graph(num_vertices, degree):
+    # Sprawdź warunki na stopień grafu
+    if degree >= num_vertices or (degree * num_vertices) % 2 != 0:
+        print("Nie można stworzyć grafu regularnego o podanych parametrach.")
+        return None
 
-    while True:
-        edges = []
+    # Stwórz macierz zerową dla macierzy incydencji
+    inc_matrix = np.zeros((num_vertices, int(degree * num_vertices / 2)), dtype=int)
 
-        for i in range(1, nodes + 1):
-            for j in range(i + 1, nodes + 1):
-                rand = np.random.rand()
+    # Generuj graf regularny
+    vertex_degrees = np.zeros(num_vertices, dtype=int)  # Licznik stopni wierzchołków
 
-                if rand < probability:
-                    edges.append([i, j])
+    for col in range(inc_matrix.shape[1]):
+        # Szukaj wierzchołka o najmniejszym stopniu
+        min_degree_vertex = np.argmin(vertex_degrees)
 
-        if edges != []:
-            if max(map(max, edges)) == nodes:
-                neighbourList = [[] for _ in range(nodes)]
+        # Znajdź pierwszy niepołączony wierzchołek
+        connected_vertices = np.where(inc_matrix[:, col] == 1)[0]
 
-                for edge in edges:
-                    neighbourList[edge[0] - 1].append(edge[1])
-                    neighbourList[edge[1] - 1].append(edge[0])
+        for vertex in range(num_vertices):
+            if vertex_degrees[vertex] < degree and vertex not in connected_vertices and vertex != min_degree_vertex:
+                # Połącz wierzchołki
+                inc_matrix[min_degree_vertex, col] = 1
+                inc_matrix[vertex, col] = 1
 
-                sequence = [len(neighbourList[i]) for i in range(len(neighbourList))]
+                # Zwiększ licznik stopnia wierzchołków
+                vertex_degrees[min_degree_vertex] += 1
+                vertex_degrees[vertex] += 1
 
-                if all(sequence[i] == level for i in range(len(sequence))):
-                    return neighbourList
-                
+                break
 
-# draw graphs
+    return inc_matrix
 
-def draw_graph_NL_EL(data, inputType="NL"):
-    G = nx.Graph()
-    if inputType == "NL":
-        G.add_nodes_from(range(1, len(data) + 1))
-        G.add_edges_from([(index, neighbour) for index, neighbours in enumerate(data) for neighbour in neighbours])
-    elif inputType == "EL":
-        G.add_edges_from(data)
-        G.add_nodes_from(range(1, len(data) + 1))
-    pos = nx.circular_layout(G)
-    node_labels = {i: i for i in range(1, len(data) + 1)}
-    nx.draw(
-        G,
-        pos=pos,
-        node_size=1000,
-        node_color="#d9d9ff",
-        node_shape="o",
-        linewidths=1.0,
-        edgecolors="#1414ff",
-        edge_color="#000",
-        width=2,
-        labels=node_labels,
-        font_size=16.0,
-        font_color="#000",
-    )
-    plt.show()
+
+
+
+#zad6
+def is_hamiltonian(graph):
+    num_vertices = len(graph)
+    visited = [False] * num_vertices
+
+    def dfs(vertex, num_visited):
+        visited[vertex] = True
+        num_visited += 1
+        if num_visited == num_vertices:
+            return True
+        for neighbor in range(num_vertices):
+            if graph[vertex][neighbor] == 1 and not visited[neighbor]:
+                if dfs(neighbor, num_visited):
+                    return True
+        visited[vertex] = False
+        return False
+
+    for start_vertex in range(num_vertices):
+        if dfs(start_vertex, 0):
+            return True
+
+    return False
